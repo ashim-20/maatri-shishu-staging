@@ -1,0 +1,2244 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Maatri-Shishu workspace API",
+    "version": "0.1.0",
+    "description": "Next.js route handlers backed by Supabase Auth and PostgreSQL RPC. Protected APIs are disabled in local demo mode. Date-only values use Gregorian YYYY-MM-DD; timestamps use ISO 8601. Mutation POSTs require an Origin matching the application's origin. All responses are private/no-store and have X-Request-Id. This contract documents the implemented API; it does not claim hosted integration or clinical approval."
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "security": [
+    {
+      "staffSession": []
+    }
+  ],
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "summary": "Sign in an individually provisioned staff account",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session established with HttpOnly cookies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin, role or scope denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Authentication rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Supabase unavailable or demo mode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "summary": "Revoke the current session, including for disabled staff",
+        "responses": {
+          "200": {
+            "description": "Session revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin, role or scope denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Authentication rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Supabase unavailable or demo mode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspace": {
+      "get": {
+        "summary": "Read the full currently scoped snapshot and record workspace access",
+        "description": "Returns assigned records only. Administrative roles receive schedules; ordinary staff receive only active schedules. Incremental cursor pagination is not implemented.",
+        "responses": {
+          "200": {
+            "description": "Scoped workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Workspace"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin, role or scope denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Authentication rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Supabase unavailable or demo mode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync": {
+      "post": {
+        "summary": "Apply an idempotent, version-checked operation or atomic form batch",
+        "description": "A batch contains 1–30 operations in parent-before-child order and commits entirely or rolls back entirely. Maximum serialized batch length: 90,000 characters; Content-Length above 100,000 is rejected. Retry identical operation IDs after uncertain delivery. A 409 requires explicit review; changing payload requires a new operation ID. Supplied role, actor or facility are never trusted; PostgreSQL derives them from auth.uid().",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/Operation"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "operations"
+                    ],
+                    "properties": {
+                      "operations": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 30,
+                        "items": {
+                          "$ref": "#/components/schemas/Operation"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "All writes committed, or identical receipts replayed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "record": {
+                            "$ref": "#/components/schemas/Entity"
+                          },
+                          "duplicate": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin, role or scope denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Authentication rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Supabase unavailable or demo mode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/audit": {
+      "post": {
+        "summary": "Upload durable profile-read or print metadata",
+        "description": "Idempotent by staff account and access-event ID. The observation time is device supplied; the database separately records receipt time. No patient narrative is accepted. Current account and record scope are rechecked.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessEvent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Access event acknowledged",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin, role or scope denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Authentication rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Supabase unavailable or demo mode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/export": {
+      "get": {
+        "summary": "Export scoped records as audited JSON",
+        "description": "Health workers and supervisors only. This is a data export, not a complete database backup or restore format.",
+        "responses": {
+          "200": {
+            "description": "Scoped export",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "format": {
+                      "const": "maatri-shishu/1"
+                    },
+                    "exportedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "records": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Entity"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin, role or scope denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Authentication rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Supabase unavailable or demo mode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "staffSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "sb-<project-ref>-auth-token",
+        "description": "Project-specific Supabase SSR cookie (possibly chunked). Issued and refreshed on the server; HttpOnly, SameSite=Lax, Secure in production. The browser does not receive a JavaScript-readable auth token."
+      }
+    },
+    "schemas": {
+      "mothers": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "reference": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "settlement": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "age": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 10,
+                "maximum": 100
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "phone": {
+            "default": "",
+            "type": "string",
+            "maxLength": 25
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "ne",
+              "bho"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pregnant",
+              "postnatal",
+              "inactive",
+              "moved"
+            ]
+          },
+          "consent": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "given",
+                  "declined",
+                  "withdrawn"
+                ]
+              },
+              "language": {
+                "type": "string",
+                "enum": [
+                  "en",
+                  "ne",
+                  "bho"
+                ]
+              },
+              "method": {
+                "type": "string",
+                "enum": [
+                  "verbal",
+                  "written"
+                ]
+              },
+              "guardian": {
+                "default": "",
+                "type": "string",
+                "maxLength": 120
+              }
+            },
+            "required": [
+              "status",
+              "language",
+              "method",
+              "guardian"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "name",
+          "reference",
+          "settlement",
+          "age",
+          "phone",
+          "language",
+          "status",
+          "consent"
+        ],
+        "additionalProperties": false
+      },
+      "pregnancies": {
+        "type": "object",
+        "properties": {
+          "motherId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "lmp": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "edd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dateSource": {
+            "type": "string",
+            "enum": [
+              "provider",
+              "card",
+              "reported",
+              "unknown"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "postnatal",
+              "closed"
+            ]
+          }
+        },
+        "required": [
+          "motherId",
+          "lmp",
+          "edd",
+          "dateSource",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "births": {
+        "type": "object",
+        "properties": {
+          "motherId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pregnancyId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "time": {
+            "default": "",
+            "type": "string",
+            "pattern": "^$|^([01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "place": {
+            "default": "",
+            "type": "string",
+            "maxLength": 120
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "provider",
+              "card",
+              "reported",
+              "unknown"
+            ]
+          }
+        },
+        "required": [
+          "motherId",
+          "pregnancyId",
+          "date",
+          "time",
+          "place",
+          "source"
+        ],
+        "additionalProperties": false
+      },
+      "children": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "reference": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "motherId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "birthId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dob": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dobSource": {
+            "type": "string",
+            "enum": [
+              "confirmed",
+              "approximate",
+              "unknown"
+            ]
+          },
+          "sex": {
+            "type": "string",
+            "enum": [
+              "female",
+              "male",
+              "not_recorded"
+            ]
+          },
+          "settlement": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "scheduleId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "moved",
+              "deceased"
+            ]
+          },
+          "consent": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "given",
+                  "declined",
+                  "withdrawn"
+                ]
+              },
+              "language": {
+                "type": "string",
+                "enum": [
+                  "en",
+                  "ne",
+                  "bho"
+                ]
+              },
+              "method": {
+                "type": "string",
+                "enum": [
+                  "verbal",
+                  "written"
+                ]
+              },
+              "guardian": {
+                "default": "",
+                "type": "string",
+                "maxLength": 120
+              }
+            },
+            "required": [
+              "status",
+              "language",
+              "method",
+              "guardian"
+            ],
+            "additionalProperties": false
+          },
+          "correctionReason": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "name",
+          "reference",
+          "motherId",
+          "birthId",
+          "dob",
+          "dobSource",
+          "sex",
+          "settlement",
+          "scheduleId",
+          "status",
+          "consent"
+        ],
+        "additionalProperties": false
+      },
+      "care_events": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "subjectType": {
+            "type": "string",
+            "enum": [
+              "mother",
+              "child"
+            ]
+          },
+          "pregnancyId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "anc",
+              "pnc_mother",
+              "pnc_child",
+              "td",
+              "vaccination"
+            ]
+          },
+          "date": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "provider_administered",
+              "card_transcription",
+              "caregiver_reported"
+            ]
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "provider": {
+            "default": "",
+            "type": "string",
+            "maxLength": 120
+          },
+          "doseCode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scheduleId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timing": {
+            "default": "",
+            "type": "string",
+            "maxLength": 60
+          },
+          "supersedesId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "default": "",
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "subjectId",
+          "subjectType",
+          "pregnancyId",
+          "kind",
+          "date",
+          "source",
+          "verified",
+          "provider",
+          "doseCode",
+          "scheduleId",
+          "timing",
+          "supersedesId",
+          "note"
+        ],
+        "additionalProperties": false
+      },
+      "event_reviews": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "verified",
+              "rejected"
+            ]
+          },
+          "expectedReviewId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "eventId",
+          "decision",
+          "expectedReviewId",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "appointments": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "subjectType": {
+            "type": "string",
+            "enum": [
+              "mother",
+              "child"
+            ]
+          },
+          "date": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "anc",
+              "pnc",
+              "vaccination",
+              "other"
+            ]
+          },
+          "note": {
+            "default": "",
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "subjectId",
+          "subjectType",
+          "date",
+          "type",
+          "note"
+        ],
+        "additionalProperties": false
+      },
+      "follow_ups": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "subjectType": {
+            "type": "string",
+            "enum": [
+              "mother",
+              "child"
+            ]
+          },
+          "dueDate": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "anc",
+              "pnc",
+              "vaccination",
+              "general"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "assigneeId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "doseCode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scheduleId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "closed"
+            ]
+          },
+          "completionEventId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "subjectId",
+          "subjectType",
+          "dueDate",
+          "category",
+          "reason",
+          "assigneeId",
+          "doseCode",
+          "scheduleId",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "attempts": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "date": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "home_visit",
+              "phone",
+              "health_post"
+            ]
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "plans_to_attend",
+              "attended_elsewhere",
+              "card_unavailable",
+              "temporarily_unavailable",
+              "moved",
+              "unable_to_contact",
+              "declines",
+              "session_postponed",
+              "service_unavailable",
+              "referred",
+              "other"
+            ]
+          },
+          "nextDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "default": "",
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "taskId",
+          "date",
+          "channel",
+          "outcome",
+          "nextDate",
+          "note"
+        ],
+        "additionalProperties": false
+      },
+      "sessions": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "date": {
+            "type": "string"
+          },
+          "startTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "location": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "service": {
+            "type": "string",
+            "enum": [
+              "immunization",
+              "anc_pnc",
+              "combined"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "scheduled",
+              "confirmed",
+              "cancelled"
+            ]
+          },
+          "note": {
+            "default": "",
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "title",
+          "date",
+          "startTime",
+          "location",
+          "service",
+          "status",
+          "note"
+        ],
+        "additionalProperties": false
+      },
+      "consents": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "subjectType": {
+            "type": "string",
+            "enum": [
+              "mother",
+              "child"
+            ]
+          },
+          "consent": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "given",
+                  "declined",
+                  "withdrawn"
+                ]
+              },
+              "language": {
+                "type": "string",
+                "enum": [
+                  "en",
+                  "ne",
+                  "bho"
+                ]
+              },
+              "method": {
+                "type": "string",
+                "enum": [
+                  "verbal",
+                  "written"
+                ]
+              },
+              "guardian": {
+                "default": "",
+                "type": "string",
+                "maxLength": 120
+              }
+            },
+            "required": [
+              "status",
+              "language",
+              "method",
+              "guardian"
+            ],
+            "additionalProperties": false
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "subjectId",
+          "subjectType",
+          "consent",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "schedules": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "authority": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "effectiveFrom": {
+            "type": "string"
+          },
+          "effectiveTo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "clinical_approved",
+              "active"
+            ]
+          },
+          "clinicalApprover": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "programmeApprover": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "testOnly": {
+            "type": "boolean"
+          },
+          "doses": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "age": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1200
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "days",
+                    "weeks",
+                    "months"
+                  ]
+                }
+              },
+              "required": [
+                "code",
+                "name",
+                "age",
+                "unit"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "name",
+          "source",
+          "authority",
+          "effectiveFrom",
+          "effectiveTo",
+          "status",
+          "clinicalApprover",
+          "programmeApprover",
+          "testOnly",
+          "doses"
+        ],
+        "additionalProperties": false
+      },
+      "reviews": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "subjectType": {
+            "type": "string",
+            "enum": [
+              "mother",
+              "child"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "duplicate",
+              "uncertain_dob",
+              "transfer",
+              "correction"
+            ]
+          },
+          "relatedId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "resolved"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "resolution": {
+            "default": "",
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "subjectId",
+          "subjectType",
+          "category",
+          "relatedId",
+          "status",
+          "reason",
+          "resolution"
+        ],
+        "additionalProperties": false
+      },
+      "Operation": {
+        "type": "object",
+        "required": [
+          "id",
+          "entityId",
+          "entityType",
+          "action",
+          "data",
+          "expectedVersion",
+          "wardId",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "batchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entityType": {
+            "type": "string",
+            "enum": [
+              "mothers",
+              "pregnancies",
+              "births",
+              "children",
+              "care_events",
+              "event_reviews",
+              "appointments",
+              "follow_ups",
+              "attempts",
+              "sessions",
+              "consents",
+              "schedules",
+              "reviews"
+            ]
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update",
+              "approve_clinical",
+              "activate"
+            ]
+          },
+          "data": {
+            "type": "object",
+            "description": "Full entity payload using the matching entityType schema; empty for approval transitions."
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "wardId": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 99
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "entityType": {
+                  "const": "mothers"
+                },
+                "action": {
+                  "enum": [
+                    "create",
+                    "update"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/mothers"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "entityType": {
+                  "const": "pregnancies"
+                },
+                "action": {
+                  "enum": [
+                    "create",
+                    "update"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/pregnancies"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "entityType": {
+                  "const": "births"
+                },
+                "action": {
+                  "enum": [
+                    "create",
+                    "update"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/births"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "entityType": {
+                  "const": "children"
+                },
+                "action": {
+                  "enum": [
+                    "create",
+                    "update"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/children"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "entityType": {
+                  "const": "care_events"
+                },
+                "action": {
+                  "enum": [
+                    "create",
+                    "update"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/care_events"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "entityType": {
+                  "const": "event_reviews"
+                },
+                "action": {
+                  "enum": [
+                    "create",
+                    "update"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/event_reviews"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "entityType": {
+                  "const": "appointments"
+                },
+                "action": {
+                  "enum": [
+                    "create",
+                    "update"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/appointments"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "entityType": {
+                  "const": "follow_ups"
+                },
+                "action": {
+                  "enum": [
+                    "create",
+                    "update"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/follow_ups"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "entityType": {
+                  "const": "attempts"
+                },
+                "action": {
+                  "enum": [
+                    "create",
+                    "update"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/attempts"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "entityType": {
+                  "const": "sessions"
+                },
+                "action": {
+                  "enum": [
+                    "create",
+                    "update"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/sessions"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "entityType": {
+                  "const": "consents"
+                },
+                "action": {
+                  "enum": [
+                    "create",
+                    "update"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/consents"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "entityType": {
+                  "const": "schedules"
+                },
+                "action": {
+                  "enum": [
+                    "create",
+                    "update"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/schedules"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "entityType": {
+                  "const": "reviews"
+                },
+                "action": {
+                  "enum": [
+                    "create",
+                    "update"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/reviews"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Entity": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "data",
+          "facilityId",
+          "wardId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "mothers",
+              "pregnancies",
+              "births",
+              "children",
+              "care_events",
+              "event_reviews",
+              "appointments",
+              "follow_ups",
+              "attempts",
+              "sessions",
+              "consents",
+              "schedules",
+              "reviews"
+            ]
+          },
+          "data": {
+            "type": "object"
+          },
+          "facilityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "wardId": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "Success": {
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "properties": {
+          "ok": {
+            "const": true
+          }
+        }
+      },
+      "AccessEvent": {
+        "type": "object",
+        "required": [
+          "id",
+          "action",
+          "entityId",
+          "entityType",
+          "occurredAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "read",
+              "print"
+            ]
+          },
+          "entityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entityType": {
+            "type": "string",
+            "enum": [
+              "mothers",
+              "children"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "fchv",
+              "health_worker",
+              "supervisor",
+              "municipality_admin",
+              "clinical_approver",
+              "system_admin"
+            ]
+          },
+          "facilityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facilityName": {
+            "type": "string"
+          },
+          "wardIds": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Workspace": {
+        "type": "object",
+        "required": [
+          "profile",
+          "records",
+          "audit"
+        ],
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/Profile"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Entity"
+            }
+          },
+          "audit": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "actor": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                },
+                "entityId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "entityType": {
+                  "type": "string"
+                },
+                "at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}
